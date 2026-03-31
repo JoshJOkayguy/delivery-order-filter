@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Dasher" />
+  <meta name="theme-color" content="#0D0D0D" />
+  <title>Dasher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --accept: #00E5A0;
+      --decline: #FF4D4D;
+      --neutral: #C8FF00;
+      --bg: #0D0D0D;
+      --surface: #161616;
+      --surface2: #1E1E1E;
+      --border: #2A2A2A;
+      --text: #F0F0F0;
+      --muted: #666;
+      --font-display: 'Syne', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+    }
+    html, body { height: 100%; background: #0D0D0D; }
+    body { color: var(--text); font-family: var(--font-mono); -webkit-tap-highlight-color: transparent; }
+    #root { height: 100%; }
+
+    .app { min-height: 100vh; display: flex; flex-direction: column; max-width: 420px; margin: 0 auto; padding: 0 0 80px; }
+    .header { padding: 52px 20px 0; display: flex; align-items: flex-start; justify-content: space-between; }
+    .header-title { font-family: var(--font-display); font-size: 28px; font-weight: 800; letter-spacing: -0.5px; line-height: 1; }
+    .header-sub { font-size: 11px; color: var(--muted); margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .history-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); font-family: var(--font-mono); font-size: 11px; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: color 0.15s, border-color 0.15s; letter-spacing: 0.06em; text-transform: uppercase; }
+    .history-btn:hover { color: var(--text); border-color: #444; }
+    .threshold-bar { margin: 20px 20px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .threshold-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .threshold-value { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--neutral); cursor: pointer; user-select: none; transition: opacity 0.15s; }
+    .threshold-value:hover { opacity: 0.75; }
+    .threshold-input { background: transparent; border: none; border-bottom: 2px solid var(--neutral); color: var(--neutral); font-family: var(--font-display); font-size: 22px; font-weight: 700; width: 80px; outline: none; text-align: right; }
+    .threshold-hint { font-size: 11px; color: var(--muted); }
+    .verdict-card { margin: 16px 20px 0; border-radius: 16px; height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--border); background: var(--surface); transition: background 0.2s, border-color 0.2s; position: relative; overflow: hidden; }
+    .verdict-card.bg-accept { background: rgba(0,229,160,0.08); border-color: rgba(0,229,160,0.35); }
+    .verdict-card.bg-decline { background: rgba(255,77,77,0.08); border-color: rgba(255,77,77,0.35); }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+    .shake { animation: shake 0.5s ease; }
+    @keyframes pop { 0%{transform:scale(0.85);opacity:0} 60%{transform:scale(1.05)} 100%{transform:scale(1);opacity:1} }
+    .pop { animation: pop 0.25s ease forwards; }
+    .verdict-word { font-family: var(--font-display); font-size: 52px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+    .verdict-word.accept { color: var(--accept); }
+    .verdict-word.decline { color: var(--decline); }
+    .verdict-word.neutral { color: #333; }
+    .rate-display { font-size: 15px; color: var(--muted); }
+    .rate-display span { font-weight: 500; color: var(--text); }
+    .vs-threshold { font-size: 12px; color: var(--muted); }
+    .diff-pos { color: var(--accept); }
+    .diff-neg { color: var(--decline); }
+    .inputs { margin: 16px 20px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .input-group { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; transition: border-color 0.15s; }
+    .input-group:focus-within { border-color: #444; }
+    .input-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+    .input-wrap { display: flex; align-items: center; gap: 4px; }
+    .input-prefix { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--muted); }
+    .num-input { background: transparent; border: none; outline: none; color: var(--text); font-family: var(--font-display); font-size: 28px; font-weight: 700; width: 100%; min-width: 0; -moz-appearance: textfield; }
+    .num-input::placeholder { color: #2E2E2E; }
+    .num-input::-webkit-outer-spin-button, .num-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .log-btn { margin: 12px 20px 0; width: calc(100% - 40px); padding: 16px; background: var(--neutral); color: #0D0D0D; border: none; border-radius: 10px; font-family: var(--font-display); font-size: 15px; font-weight: 700; letter-spacing: 0.04em; cursor: pointer; transition: opacity 0.15s, transform 0.1s; text-transform: uppercase; }
+    .log-btn:hover { opacity: 0.88; }
+    .log-btn:active { transform: scale(0.98); }
+    .log-btn:disabled { background: var(--surface2); color: var(--muted); cursor: default; opacity: 1; }
+    .stats-bar { margin: 20px 20px 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .stat-cell { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; text-align: center; }
+    .stat-val { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+    .stat-val.earn { color: var(--accept); }
+    .stat-val.rate { color: var(--neutral); }
+    .stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 3px; }
+    .history-panel { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 100; display: flex; flex-direction: column; justify-content: flex-end; }
+    .history-sheet { background: var(--surface); border-top: 1px solid var(--border); border-radius: 20px 20px 0 0; padding: 24px 20px 40px; max-height: 70vh; overflow-y: auto; }
+    .history-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .history-title { font-family: var(--font-display); font-size: 20px; font-weight: 800; }
+    .clear-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-family: var(--font-mono); font-size: 11px; padding: 5px 10px; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; }
+    .clear-btn:hover { color: var(--decline); border-color: var(--decline); }
+    .history-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 32px 0; }
+    .history-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .history-row:last-child { border-bottom: none; }
+    .h-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .h-dot.accept { background: var(--accept); }
+    .h-dot.decline { background: var(--decline); }
+    .h-details { flex: 1; }
+    .h-pay { font-family: var(--font-display); font-size: 15px; font-weight: 700; }
+    .h-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .h-rate { font-size: 13px; font-weight: 500; text-align: right; }
+    .h-rate.accept { color: var(--accept); }
+    .h-rate.decline { color: var(--decline); }
+    .h-time { font-size: 11px; color: var(--muted); text-align: right; margin-top: 2px; }
+    .close-btn { display: block; width: 100%; margin-top: 16px; padding: 14px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font-display); font-size: 14px; font-weight: 700; border-radius: 10px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; }
+    .close-btn:hover { border-color: #444; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script>
+    const { useState, useEffect, useRef } = React;
+    const STORAGE_KEY = "delivery_filter_data";
+    const defaultState = { threshold: 1.50, history: [] };
+    function loadState() {
+      try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? { ...defaultState, ...JSON.parse(raw) } : defaultState; }
+      catch { return defaultState; }
+    }
+    function saveState(state) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+    }
+    const fmt = n => n.toFixed(2);
+
+    function App() {
+      const [pay, setPay] = useState("");
+      const [miles, setMiles] = useState("");
+      const [threshold, setThreshold] = useState(1.50);
+      const [editingThreshold, setEditingThreshold] = useState(false);
+      const [thresholdInput, setThresholdInput] = useState("1.50");
+      const [history, setHistory] = useState([]);
+      const [verdict, setVerdict] = useState(null);
+      const [showHistory, setShowHistory] = useState(false);
+      const [shake, setShake] = useState(false);
+      const payRef = useRef();
+
+      useEffect(() => {
+        const s = loadState();
+        setThreshold(s.threshold);
+        setThresholdInput(s.threshold.toFixed(2));
+        setHistory(s.history);
+      }, []);
+
+      useEffect(() => { saveState({ threshold, history }); }, [threshold, history]);
+
+      const payNum = parseFloat(pay);
+      const milesNum = parseFloat(miles);
+      const rate = (!isNaN(payNum) && !isNaN(milesNum) && milesNum > 0) ? payNum / milesNum : null;
+
+      useEffect(() => {
+        if (rate !== null) setVerdict(rate >= threshold ? "accept" : "decline");
+        else setVerdict(null);
+      }, [rate, threshold]);
+
+      function triggerShake() { setShake(true); setTimeout(() => setShake(false), 500); }
+
+      function handleLog() {
+        if (rate === null) { triggerShake(); return; }
+        const entry = { id: Date.now(), pay: payNum, miles: milesNum, rate, verdict, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
+        setHistory(prev => [entry, ...prev].slice(0, 30));
+        setPay(""); setMiles(""); setVerdict(null);
+        payRef.current?.focus();
+      }
+
+      function commitThreshold() {
+        const v = parseFloat(thresholdInput);
+        if (!isNaN(v) && v > 0) setThreshold(v);
+        else setThresholdInput(threshold.toFixed(2));
+        setEditingThreshold(false);
+      }
+
+      const shiftEarnings = history.reduce((s, e) => s + e.pay, 0);
+      const shiftMiles = history.reduce((s, e) => s + e.miles, 0);
+      const shiftAvgRate = history.length > 0 ? shiftEarnings / shiftMiles : null;
+      const bgClass = verdict === "accept" ? "bg-accept" : verdict === "decline" ? "bg-decline" : "bg-neutral";
+
+      return React.createElement(React.Fragment, null,
+        React.createElement("div", { className: "app" },
+          React.createElement("div", { className: "header" },
+            React.createElement("div", null,
+              React.createElement("div", { className: "header-title" }, "DASHER"),
+              React.createElement("div", { className: "header-sub" }, "Order filter")
+            ),
+            React.createElement("button", { className: "history-btn", onClick: () => setShowHistory(true) },
+              "Log", history.length > 0 ? ` (${history.length})` : ""
+            )
+          ),
+          React.createElement("div", { className: "threshold-bar" },
+            React.createElement("div", null,
+              React.createElement("div", { className: "threshold-label" }, "Min rate"),
+              React.createElement("div", { className: "threshold-hint" }, "$ per mile")
+            ),
+            editingThreshold
+              ? React.createElement("input", { className: "threshold-input", value: thresholdInput, autoFocus: true, onChange: e => setThresholdInput(e.target.value), onBlur: commitThreshold, onKeyDown: e => { if (e.key === "Enter") commitThreshold(); } })
+              : React.createElement("div", { className: "threshold-value", onClick: () => { setEditingThreshold(true); setThresholdInput(threshold.toFixed(2)); } }, `$${fmt(threshold)}`)
+          ),
+          React.createElement("div", { className: `verdict-card ${bgClass} ${shake ? "shake" : ""}` },
+            verdict === null && React.createElement("div", { className: "verdict-word neutral" }, "—"),
+            verdict === "accept" && React.createElement("div", { className: "verdict-word accept pop", key: `a${pay}${miles}` }, "TAKE IT"),
+            verdict === "decline" && React.createElement("div", { className: "verdict-word decline pop", key: `d${pay}${miles}` }, "SKIP"),
+            rate !== null && React.createElement(React.Fragment, null,
+              React.createElement("div", { className: "rate-display" }, React.createElement("span", null, `$${fmt(rate)}`), "/mi"),
+              React.createElement("div", { className: "vs-threshold" },
+                rate >= threshold
+                  ? React.createElement("span", { className: "diff-pos" }, `+$${fmt(rate - threshold)}/mi above threshold`)
+                  : React.createElement("span", { className: "diff-neg" }, `-$${fmt(threshold - rate)}/mi below threshold`)
+              )
+            )
+          ),
+          React.createElement("div", { className: "inputs" },
+            React.createElement("div", { className: "input-group" },
+              React.createElement("div", { className: "input-label" }, "Offered pay"),
+              React.createElement("div", { className: "input-wrap" },
+                React.createElement("span", { className: "input-prefix" }, "$"),
+                React.createElement("input", { ref: payRef, className: "num-input", type: "number", inputMode: "decimal", placeholder: "0", value: pay, onChange: e => setPay(e.target.value) })
+              )
+            ),
+            React.createElement("div", { className: "input-group" },
+              React.createElement("div", { className: "input-label" }, "Miles"),
+              React.createElement("div", { className: "input-wrap" },
+                React.createElement("input", { className: "num-input", type: "number", inputMode: "decimal", placeholder: "0", value: miles, onChange: e => setMiles(e.target.value) })
+              )
+            )
+          ),
+          React.createElement("button", { className: "log-btn", disabled: rate === null, onClick: handleLog }, "Log order + clear"),
+          history.length > 0 && React.createElement("div", { className: "stats-bar" },
+            React.createElement("div", { className: "stat-cell" },
+              React.createElement("div", { className: "stat-val earn" }, `$${fmt(shiftEarnings)}`),
+              React.createElement("div", { className: "stat-lbl" }, "Earned")
+            ),
+            React.createElement("div", { className: "stat-cell" },
+              React.createElement("div", { className: "stat-val" }, fmt(shiftMiles)),
+              React.createElement("div", { className: "stat-lbl" }, "Miles")
+            ),
+            React.createElement("div", { className: "stat-cell" },
+              React.createElement("div", { className: "stat-val rate" }, shiftAvgRate ? `$${fmt(shiftAvgRate)}` : "—"),
+              React.createElement("div", { className: "stat-lbl" }, "Avg $/mi")
+            )
+          )
+        ),
+        showHistory && React.createElement("div", { className: "history-panel", onClick: e => { if (e.target === e.currentTarget) setShowHistory(false); } },
+          React.createElement("div", { className: "history-sheet" },
+            React.createElement("div", { className: "history-header" },
+              React.createElement("div", { className: "history-title" }, "Order log"),
+              history.length > 0 && React.createElement("button", { className: "clear-btn", onClick: () => setHistory([]) }, "Clear all")
+            ),
+            history.length === 0
+              ? React.createElement("div", { className: "history-empty" }, "No orders logged yet.")
+              : history.map(e => React.createElement("div", { className: "history-row", key: e.id },
+                  React.createElement("div", { className: `h-dot ${e.verdict}` }),
+                  React.createElement("div", { className: "h-details" },
+                    React.createElement("div", { className: "h-pay" }, `$${fmt(e.pay)}`),
+                    React.createElement("div", { className: "h-sub" }, `${fmt(e.miles)} mi`)
+                  ),
+                  React.createElement("div", null,
+                    React.createElement("div", { className: `h-rate ${e.verdict}` }, `$${fmt(e.rate)}/mi`),
+                    React.createElement("div", { className: "h-time" }, e.time)
+                  )
+                )),
+            React.createElement("button", { className: "close-btn", onClick: () => setShowHistory(false) }, "Close")
+          )
+        )
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+  </script>
+</body>
+</html>
